@@ -25,7 +25,7 @@ class CRM_MembershipExtras_MembershipInstallmentsHandler {
     ]);
   }
 
-  public function createFirstInstallmentContribution($recurContributionID, $previousRecurContribution) {
+  public function createFirstInstallmentContribution() {
     $this->createContribution();
   }
 
@@ -49,7 +49,7 @@ class CRM_MembershipExtras_MembershipInstallmentsHandler {
   private function setCurrentRecurContributionLastContribution() {
     $contribution = civicrm_api3('Contribution', 'get', [
       'sequential' => 1,
-      'return' => ['currency', 'source', 'non_deductible_amount',
+      'return' => ['currency', 'contribution_source', 'non_deductible_amount',
         'contact_id', 'fee_amount', 'total_amount', 'payment_instrument_id',
         'is_test', 'campaign_id', 'tax_amount', 'contribution_recur_id', 'financial_type_id'],
       'contribution_recur_id' => $this->currentRecurContribution['id'],
@@ -88,12 +88,12 @@ class CRM_MembershipExtras_MembershipInstallmentsHandler {
   private function buildContributionParams($contributionNumber) {
     $params =  [
       'currency' => $this->currentRecurContributionlastContribution['currency'],
-      'contribution_source' => $this->currentRecurContributionlastContribution['source'],
+      'contribution_source' => $this->currentRecurContributionlastContribution['contribution_source'],
       'non_deductible_amount' => $this->currentRecurContributionlastContribution['non_deductible_amount'],
       'contact_id' => $this->currentRecurContributionlastContribution['contact_id'],
       'fee_amount' => $this->currentRecurContributionlastContribution['fee_amount'],
       'total_amount' => $this->currentRecurContributionlastContribution['total_amount'],
-      'receive_date' => $this->calculateInstallmentReceiveDate($contributionNumber), // TODO : correct
+      'receive_date' => $this->calculateInstallmentReceiveDate($contributionNumber), // TODO : correct calc
       'payment_instrument_id' => $this->currentRecurContributionlastContribution['payment_instrument_id'],
       'financial_type_id' => $this->currentRecurContributionlastContribution['financial_type_id'],
       'is_test' => $this->currentRecurContributionlastContribution['is_test'],
@@ -167,31 +167,6 @@ class CRM_MembershipExtras_MembershipInstallmentsHandler {
     if (!empty($contribution->tax_amount)) {
       CRM_Financial_BAO_FinancialItem::add($lineItem, $contribution, TRUE);
     }
-
-    /**
-     *     $lineItem =civicrm_api3('LineItem', 'create', [
-    'entity_table' => 'civicrm_membership',
-    'entity_id' => $this->lastContribution['membership_id'],
-    'contribution_id' => $contribution->id,
-    'label' => '', // TODO : membersihp type title
-    'qty' => 1,
-    'unit_price' => $contribution->total_amount,
-    'line_total' => $contribution->total_amount,
-    'financial_type_id' => $contribution->financial_type_id,
-    ])['values'][0];
-
-    civicrm_api3('FinancialItem', 'create', [
-    'contact_id' => $contribution->contact_id,
-    'description' => '', // TODO : membersihp type title
-    'amount' => $contribution->total_amount,
-    'currency' => $contribution->currency,
-    'financial_type_id' => $contribution->financial_type_id,
-    'status_id' => 'Unpaid',
-    'entity_table' => 'civicrm_line_item',
-    'entity_id' => $lineItem['id'],
-    'transaction_date' => date('Y-m-d H:i:s'), // TODO : ??
-    ]);
-     */
   }
 
 }
