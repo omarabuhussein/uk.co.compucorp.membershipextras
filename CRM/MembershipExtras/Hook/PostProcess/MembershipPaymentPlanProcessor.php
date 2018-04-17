@@ -2,12 +2,25 @@
 
 class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
 
+  /***
+   * The form submitted data.
+   *
+   * @var CRM_Core_Form
+   */
   private $form;
 
   public function __construct(&$form) {
     $this->form = &$form;
   }
 
+  /**
+   * Processes memberships after creating
+   * or renewing them from Civicrm admin form in
+   * case they were paid using the payment plan option.
+   *
+   * For now, it basically create the remaining installments
+   * contributions upfront for the payment plan.
+   */
   public function process() {
     if (!$this->isPaymentPlanPayment()) {
       return;
@@ -18,6 +31,12 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
     $installmentsHandler->createRemainingInstalmentContributionsUpfront();
   }
 
+  /**
+   * Detects if the membership is paid for
+   * using payment plan option.
+   *
+   * @return bool
+   */
   private function isPaymentPlanPayment() {
     $installmentsCount = CRM_Utils_Request::retrieve('installments', 'Int');
     $isSavingContribution = CRM_Utils_Request::retrieve('record_contribution', 'Int');
@@ -30,6 +49,11 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
     return FALSE;
   }
 
+  /**
+   * Gets the membership last recurring contribution ID.
+   *
+   * @return mixed
+   */
   private function getMembershipLastRecurContributionID() {
     $membershipID = $this->form->_id;
 
