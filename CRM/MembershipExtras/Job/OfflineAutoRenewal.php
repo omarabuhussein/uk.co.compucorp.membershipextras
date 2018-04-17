@@ -1,5 +1,7 @@
 <?php
 
+use CRM_MembershipExtras_Service_MembershipInstallmentsHandler as MembershipInstallmentsHandler;
+
 class CRM_MembershipExtras_Job_OfflineAutoRenewal {
 
   /**
@@ -222,7 +224,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
     $previousRecurContributionId = $this->currentRecurContributionID;
     $this->createRecurringContribution();
 
-    $installmentsHandler = new CRM_MembershipExtras_MembershipInstallmentsHandler(
+    $installmentsHandler = new MembershipInstallmentsHandler(
       $this->currentRecurContributionID,
       $previousRecurContributionId
     );
@@ -281,7 +283,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
    *
    */
   private function renewNoInstallmentsMembership() {
-    $installmentsHandler = new CRM_MembershipExtras_MembershipInstallmentsHandler($this->currentRecurContributionID);
+    $installmentsHandler = new CRM_MembershipExtras_Service_MembershipInstallmentsHandler($this->currentRecurContributionID);
     $installmentsHandler->createFirstInstallmentContribution($this->totalAmount);
 
     $this->renewMembership();

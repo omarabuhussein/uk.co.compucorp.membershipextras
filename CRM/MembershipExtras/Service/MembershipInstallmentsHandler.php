@@ -1,6 +1,8 @@
 <?php
 
-class CRM_MembershipExtras_MembershipInstallmentsHandler {
+use CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator as InstallmentReceiveDateCalculator;
+
+class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
 
   /**
    * The ID of the previous recurring
@@ -42,6 +44,11 @@ class CRM_MembershipExtras_MembershipInstallmentsHandler {
   private $contributionPendingStatusValue;
 
   /**
+   * @var InstallmentReceiveDateCalculator
+   */
+  private $receiveDateCalculator;
+
+  /**
    * The contribution amount to be used for the new
    * contribution, otherwise the last contribution
    * amount will be used.
@@ -53,6 +60,8 @@ class CRM_MembershipExtras_MembershipInstallmentsHandler {
   public function __construct($currentRecurContributionId, $previousRecurContributionId = NULL) {
     $this->setCurrentRecurContribution($currentRecurContributionId);
     $this->previousRecurContributionId = $previousRecurContributionId;
+
+    $this->receiveDateCalculator = new InstallmentReceiveDateCalculator($this->currentRecurContribution);
 
     $this->setContributionPendingStatusValue();
   }
@@ -196,7 +205,7 @@ class CRM_MembershipExtras_MembershipInstallmentsHandler {
       'fee_amount' => $this->lastContribution['fee_amount'],
       'net_amount' => $this->lastContribution['net_amount'],
       'total_amount' => $this->lastContribution['total_amount'],
-      'receive_date' => $this->calculateInstallmentReceiveDate($contributionNumber), // TODO : correct calc
+      'receive_date' => $this->receiveDateCalculator->calculate($contributionNumber),
       'payment_instrument_id' => $this->lastContribution['payment_instrument_id'],
       'financial_type_id' => $this->lastContribution['financial_type_id'],
       'is_test' => $this->lastContribution['is_test'],
@@ -220,50 +229,6 @@ class CRM_MembershipExtras_MembershipInstallmentsHandler {
     }
 
     return $params;
-  }
-
-  /**
-   * Calculates the receive date for the installment
-   * contribution to be created based on the installment
-   * contribution number.
-   *
-   * The recurring contribution start date is the base
-   * for this calculation.
-   *
-   * @param int $contributionNumber
-   *
-   * @return string
-   */
-  private function calculateInstallmentReceiveDate($contributionNumber) {
-    $firstDate = $this->currentRecurContribution['start_date'];
-    $intervalFrequency = $this->currentRecurContribution['frequency_interval'];
-    $frequencyUnit = $this->currentRecurContribution['frequency_unit'];
-    $cycleDay = $this->currentRecurContribution['cycle_day'];
-
-    $firstInstallmentDate = new DateTime($firstDate);
-    $numberOfIntervals = ($contributionNumber - 1) * $intervalFrequency;
-
-    switch ($frequencyUnit) {
-      case 'day':
-        $interval = "P{$numberOfIntervals}D";
-        break;
-
-      case 'week':
-        $interval = "P{$numberOfIntervals}W";
-        break;
-
-      case 'month':
-        $interval = "P{$numberOfIntervals}M";
-        break;
-
-      case 'year':
-        $interval = "P{$numberOfIntervals}Y";
-        break;
-    }
-
-    $firstInstallmentDate->add(new DateInterval($interval));
-
-    return $firstInstallmentDate->format('Y-m-d');
   }
 
 

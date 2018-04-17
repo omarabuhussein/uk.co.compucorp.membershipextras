@@ -27,7 +27,7 @@ class CRM_MembershipExtras_Hook_PostProcess_MembershipPaymentPlanProcessor {
     }
 
     $recurContributionID = $this->getMembershipLastRecurContributionID();
-    $installmentsHandler = new CRM_MembershipExtras_MembershipInstallmentsHandler($recurContributionID);
+    $installmentsHandler = new CRM_MembershipExtras_Service_MembershipInstallmentsHandler($recurContributionID);
     $installmentsHandler->createRemainingInstalmentContributionsUpfront();
   }
 
