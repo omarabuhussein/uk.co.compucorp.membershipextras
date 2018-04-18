@@ -81,7 +81,10 @@ class CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator {
     $startDateMonth = (int) $startDate->format('n');
     $startDateYear = (int) $startDate->format('Y');
 
-    $numberOfYearsToAdd = floor($numberOfMonthsToAdd / 12);
+    $numberOfYearsToAdd = floor(($startDateMonth + $numberOfMonthsToAdd) / 12);
+    if ((($startDateMonth + $numberOfMonthsToAdd) % 12) === 0) {
+      $numberOfYearsToAdd--;
+    }
     $year = $startDateYear + $numberOfYearsToAdd;
 
     $month = ($startDateMonth + $numberOfMonthsToAdd) % 12;
