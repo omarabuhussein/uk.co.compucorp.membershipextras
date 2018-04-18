@@ -68,7 +68,7 @@ class CRM_MembershipExtras_Service_InstallmentReceiveDateCalculator {
    * we want it to be 2018-02-28 instead.
    *
    * This method ensure that adding months
-   * to a date get calculated properly.
+   * to a date get caculated properly.
    *
    *
    * @param DateTime $startDate

@@ -55,7 +55,16 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
    *
    * @var float
    */
-  private $contributionAmount = NULL;
+  private $contributionAmount = 0;
+
+  /**
+   * The contribution tax amount to be used for the new
+   * contribution, otherwise the last contribution
+   * tax amount will be used.
+   *
+   * @var float
+   */
+  private $taxAmount = 0;
 
   public function __construct($currentRecurContributionId, $previousRecurContributionId = NULL) {
     $this->setCurrentRecurContribution($currentRecurContributionId);
@@ -93,14 +102,19 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
    * Creates the first installment contribution for
    * the membership new recurring contribution.
    *
-   * @param float|NULL $contributionAmount
+   * @param float $contributionAmount
    *   The amount of the contribution to be created.
    *   If not set then the recurring contribution
    *   last contribution amount price will be used.
    *
+   * @param float $taxAmount
+   *   The tax amount of the contribution to be createad
+   *   if applicable.
+   *
    */
-  public function createFirstInstallmentContribution($contributionAmount = NULL) {
+  public function createFirstInstallmentContribution($contributionAmount = 0, $taxAmount = 0) {
     $this->contributionAmount = $contributionAmount;
+    $this->taxAmount = $taxAmount;
 
     $recurContributionId = $this->currentRecurContribution['id'];
     if (!empty($this->previousRecurContributionId)) {
@@ -117,6 +131,7 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
    */
   public function createRemainingInstalmentContributionsUpfront() {
     $this->contributionAmount = NULL;
+    $this->taxAmount = NULL;
     $this->setLastContribution($this->currentRecurContribution['id']);
 
     $installmentsCount = (int) $this->currentRecurContribution['installments'];
@@ -136,7 +151,7 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
       'sequential' => 1,
       'return' => ['currency', 'contribution_source', 'net_amount',
         'contact_id', 'fee_amount', 'total_amount', 'payment_instrument_id',
-        'is_test', 'campaign_id', 'tax_amount', 'contribution_recur_id', 'financial_type_id'],
+        'is_test', 'tax_amount', 'contribution_recur_id', 'financial_type_id'],
       'contribution_recur_id' => $recurContributionId,
       'options' => ['limit' => 1, 'sort' => 'id DESC'],
     ])['values'][0];
@@ -185,7 +200,7 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
    */
   private function createContribution($contributionNumber = 1) {
     $params = $this->buildContributionParams($contributionNumber);
-    $contribution = CRM_Member_BAO_Membership::recordMembershipContribution($params);
+    $contribution = $this->recordMembershipContribution($params);
 
     $this->createLineItem($contribution);
   }
@@ -200,7 +215,7 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
   private function buildContributionParams($contributionNumber) {
     $params =  [
       'currency' => $this->lastContribution['currency'],
-      'contribution_source' => $this->lastContribution['contribution_source'],
+      'source' => $this->lastContribution['contribution_source'],
       'contact_id' => $this->lastContribution['contact_id'],
       'fee_amount' => $this->lastContribution['fee_amount'],
       'net_amount' => $this->lastContribution['net_amount'],
@@ -210,7 +225,6 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
       'financial_type_id' => $this->lastContribution['financial_type_id'],
       'is_test' => $this->lastContribution['is_test'],
       'contribution_status_id' => $this->contributionPendingStatusValue,
-      'campaign_id' => $this->lastContribution['campaign_id'],
       'is_pay_later' => TRUE,
       'membership_id' => $this->lastContribution['membership_id'],
       'tax_amount' => $this->lastContribution['tax_amount'],
@@ -223,12 +237,41 @@ class CRM_MembershipExtras_Service_MembershipInstallmentsHandler {
     }
 
     if (!empty($this->contributionAmount)) {
-      $params['total_amount'] = $this->contributionAmount;
+      $params['total_amount'] = $this->contributionAmount + $this->taxAmount;
       $params['net_amount'] = $params['total_amount'] - $params['fee_amount'];
-      unset($params['tax_amount']);
+      $params['tax_amount'] = $this->taxAmount;
     }
 
+
+
     return $params;
+  }
+
+  /**
+   * Records the membership contribution and its
+   * related entities using the specified parameters
+   *
+   * @param array $params
+   *
+   * @return CRM_Contribute_BAO_Contribution
+   */
+  private function recordMembershipContribution($params) {
+    $contribution = CRM_Contribute_BAO_Contribution::create($params);
+
+    $contributionSoftParams = CRM_Utils_Array::value('soft_credit', $params);
+    if (!empty($contributionSoftParams)) {
+      $contributionSoftParams['contribution_id'] = $contribution->id;
+      $contributionSoftParams['currency'] = $contribution->currency;
+      $contributionSoftParams['amount'] = $contribution->total_amount;
+      CRM_Contribute_BAO_ContributionSoft::add($contributionSoftParams);
+    }
+
+    CRM_Member_BAO_MembershipPayment::create(array(
+      'membership_id' => $params['membership_id'],
+      'contribution_id' => $contribution->id,
+    ));
+
+    return $contribution;
   }
 
 
