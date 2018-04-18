@@ -106,7 +106,7 @@ class CRM_MembershipExtras_Hook_Pre_MembershipPaymentPlanProcessor {
       'frequency_interval' => $this->installmentsFrequency,
       'installments' => $this->installmentsCount,
       'start_date' => $this->params['receive_date'],
-      'contribution_status_id' => 'In Progress',
+      'contribution_status_id' => 'Pending',
       'is_test' => $this->params['is_test'],
       'cycle_day' => $this->calculateCycleDay(),
       'payment_processor_id' => $this->params['payment_processor_id'],

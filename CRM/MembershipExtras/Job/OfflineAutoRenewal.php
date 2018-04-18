@@ -305,7 +305,7 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal {
       'frequency_unit' => $currentRecurContribution['frequency_unit'],
       'frequency_interval' => $currentRecurContribution['frequency_interval'],
       'installments' => $currentRecurContribution['installments'],
-      'contribution_status_id' => 'In Progress',
+      'contribution_status_id' => 'Pending',
       'is_test' => $currentRecurContribution['is_test'],
       'auto_renew' => 1,
       'cycle_day' => $currentRecurContribution['cycle_day'],
